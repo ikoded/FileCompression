@@ -21,8 +21,6 @@ std::string File::read_file(std::string filename){
 void File::compress_file(std::string filename, std::string encoded_text){
     std::string file_out = "data_out/" + filename + ".bin";
     try{
-        // remove old runs for ease
-        std::filesystem::remove(file_out);
         std::ofstream compressed_bin(file_out, std::ios::binary);
         compressed_bin.write(encoded_text.c_str(),encoded_text.length());
     }catch(const std::runtime_error& e){
