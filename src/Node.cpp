@@ -3,16 +3,11 @@
 int Node::get_freq(){
     return freq;
 }
-void Node::set_freq(int freq){
-    this->freq = freq;
-}
 
 char Node::get_ch(){
     return ch;
 }
-void Node::set_ch(char ch){
-    this->ch = ch;
-}
+
 
 std::shared_ptr<Node> Node::get_left_or_right(int direction){
     if(direction==0){
