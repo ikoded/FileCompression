@@ -67,13 +67,21 @@ int main(int argc, char* argv[]){
     std::unordered_map<char,std::string> codes;
     HuffmanCode::generate_huffman_codes(root, "", codes);
 
-    std::cout << "Original content:\n" << file_content << std::endl;
+    std::cout << "Original content:\n" << file_content << "\n\n" << std::endl;
     std::string encoded_text = HuffmanCode::encode_text(file_content, codes);
-    std::cout << "Encoded text:\n" << encoded_text << std::endl;
+    // just for fun, nothing is done with this variable
     std::string decoded_text = HuffmanCode::decode_text(encoded_text, codes);
-    std::cout << "Decoded text:\n" << decoded_text << std::endl;
 
     file.compress_file(filename, encoded_text);
+    std::string decompressed_content = file.decompress_file(filename);
+
+    if(decompressed_content == ""){
+        std::cerr << "Error decompressing file." << std::endl;
+        return 1;
+    }
+
+    std::cout << "Decoded text from bin:\n" << HuffmanCode::decode_text(decompressed_content, codes) << "\n\n" << std::endl;
+
     file.compare_sizes(filename);
 
     return 0;
