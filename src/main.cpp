@@ -69,10 +69,11 @@ int main(int argc, char* argv[]){
 
     std::cout << "Original content:\n" << file_content << "\n\n" << std::endl;
     std::string encoded_text = HuffmanCode::encode_text(file_content, codes);
-    // just for fun, nothing is done with this variable
-    std::string decoded_text = HuffmanCode::decode_text(encoded_text, codes);
 
+    // compress encoded content and output file
     file.compress_file(filename, encoded_text);
+
+    // decompress the file to show it stayed accurate
     std::string decompressed_content = file.decompress_file(filename);
 
     if(decompressed_content == ""){
@@ -80,8 +81,14 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    std::cout << "Decoded text from bin:\n" << HuffmanCode::decode_text(decompressed_content, codes) << "\n\n" << std::endl;
+    // decompress content to output to show
+    std::string decoded_decompressed_content = HuffmanCode::decode_text(decompressed_content, codes);
+    std::cout << "Decoded text from bin:\n" <<  decoded_decompressed_content << "\n\n" << std::endl;
 
+    // send decompressed content to output file
+    file.output_decoded_content(filename, decoded_decompressed_content);
+
+    // just nice to compare sizes of a compressed file before/after
     file.compare_sizes(filename);
 
     return 0;
