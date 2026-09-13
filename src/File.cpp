@@ -129,6 +129,20 @@ std::string File::decompress_file(std::string filename){
     return file_content;
 }
 
+void File::output_decoded_content(std::string filename, std::string file_content){
+    try{
+        // file to write to
+        std::ofstream file("data_in/" + filename + "out.txt");
+
+        file << file_content;
+
+    }catch(const std::runtime_error& e){
+        std::cerr << "Runtime error: " << e.what() << std::endl;
+    }catch(const std::exception& e){
+        std::cerr << "Exception error: " << e.what() << std::endl;
+    }
+}
+
 /*
 
 Compare sizes of the file before and afer, for metrics

@@ -3,7 +3,7 @@ C++ command line tool to compress files using Huffman Coding
 
 ## How to use
 
-Simply either use the filename.txt in `data_in/` and alter the contents or add any file.txt you like in `data_in/`. Then run `cmake -B build -S .` and `cmake --build build -j`. This will produce a executable in `build/`, run this with `./build/compression FILENAME` where FILENAME is the text file you want to compress in `data_in/`. The resulting bin will be placed in the `data_out/` directory.
+Simply either use the filename.txt in `data_in/` and alter the contents or add any file.txt you like in `data_in/`. Then run `cmake -B build -S .` and `cmake --build build -j`. This will produce a executable in `build/`, run this with `./build/compression FILENAME` where FILENAME is the text file you want to compress in `data_in/`. The resulting .bin will be placed in the `data_out/` directory. This also decompresses the .bin file and places it in the `data_in/` directory with `out` postfixed to show it accurately decoded
 
 ## How/Why Huffman Coding
 
