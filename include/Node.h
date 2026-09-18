@@ -11,7 +11,12 @@ class Node{
         std::shared_ptr<Node> get_left_or_right(int direction); // 0 for left, 1 for right
         void set_left_or_right(int direction, std::shared_ptr<Node> node);
 
-        struct CompareNode;
+        struct CompareNode{
+            bool operator()(const std::shared_ptr<Node>& a, const std::shared_ptr<Node>& b){
+                return a->get_freq() > b->get_freq(); // lowest to greatest
+            }
+        };
+
 
         Node(char c, int f) : ch(c), freq(f), left(nullptr), right(nullptr){}
     private:

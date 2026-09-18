@@ -6,13 +6,6 @@
 #include <queue>
 #include <vector>
 
-struct CompareNode{
-    bool operator()(const std::shared_ptr<Node>& a, const std::shared_ptr<Node>& b){
-        return a->get_freq() > b->get_freq(); // lowest to greatest
-    }
-};
-
-
 int main(int argc, char* argv[]){
     std::unordered_map<char,int> frequencies;
     File file;
@@ -39,7 +32,7 @@ int main(int argc, char* argv[]){
     }
 
     // create a min heap of lowest to greatest
-    std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>, CompareNode> minheap;
+    std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>, Node::CompareNode> minheap;
     for(const auto& [ch,freq] : frequencies){
         minheap.push(std::make_shared<Node>(ch,freq));
     }
