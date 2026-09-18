@@ -196,6 +196,10 @@ void File::compare_sizes(std::string filename){
     std::string file_in = "data_in/" + filename + ".txt";
     std::string file_out = "data_out/" + filename + ".bin";
 
-    std::cout << "Original size: " << std::filesystem::file_size(file_in) << " bytes" << std::endl;
-    std::cout << "Compressed size: " << std::filesystem::file_size(file_out) << " bytes" << std::endl;
+    float file_in_size = std::filesystem::file_size(file_in);
+    float file_out_size =  std::filesystem::file_size(file_out);
+    float compression_percent = 100 - ((file_out_size / file_in_size) * 100);
+
+    std::cout << "Original size: " << file_in_size << " bytes" << std::endl;
+    std::cout << "Compressed size: " << file_out_size << " bytes (" << compression_percent << "%)" << std::endl;
 }
