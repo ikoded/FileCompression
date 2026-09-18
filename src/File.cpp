@@ -23,16 +23,30 @@ std::string File::read_file(std::string filename){
 Compress file using algorithm of storing each bit left to right as a full byte (char) for .bin
 
 */
-void File::compress_file(std::string filename, std::string encoded_text){
+void File::compress_file(std::string filename, std::string encoded_text, std::unordered_map<char, std::string> codes){
     std::string file_out = "data_out/" + filename + ".bin";
     try{
         std::ofstream compressed_bin(file_out, std::ios::out | std::ios::binary);
 
-        // grab number of pairs to go through and remainder
+        // write the headers at the beginning for the decoder to know
+        // number of chars there will be
+        uint32_t num_chars = codes.size();
+        compressed_bin.write(reinterpret_cast<char*>(&num_chars), sizeof(num_chars));
+        // initialize code size for loop
+        uint32_t code_size;
+        for(const auto& [letter,code] : codes){
+            // write the char first
+            compressed_bin.write(&letter, sizeof(letter));
+            // then get and write the code size
+            code_size = code.size();
+            compressed_bin.write(reinterpret_cast<char*>(&code_size), sizeof(code_size));
+            // finally write the code
+            compressed_bin.write(code.c_str(), code_size);
+        }
+
+        // grab number of pairs to go through and remainder of bits, then write to header
         uint32_t num_pairs = encoded_text.length() / 8;
         uint32_t last_bits = encoded_text.length() % 8;
-
-        // write the headers at the beginning for the decoder to know
         compressed_bin.write(reinterpret_cast<char*>(&num_pairs), sizeof(num_pairs));
         compressed_bin.write(reinterpret_cast<char*>(&last_bits), sizeof(last_bits));
 
@@ -75,18 +89,45 @@ void File::compress_file(std::string filename, std::string encoded_text){
 
 /*
 
-Decompresses file using algorithm set in compression and returns as a String
+Decompresses file using algorithm set in compression, decode it and return a String
 
 */
 std::string File::decompress_file(std::string filename){
     std::string file_out_name = "data_out/" + filename + ".bin";
     std::string file_content = "";
+    std::string decoded_text = "";
     try{
         std::ifstream file_in(file_out_name, std::ios::binary);
-        uint32_t num_pairs;
-        uint32_t last_bits;
+        // grab code headers to decipher at end
+        std::unordered_map<char, std::string> codes;
+        // number of chars
+        uint32_t char_n;
+        file_in.read(reinterpret_cast<char*>(&char_n), sizeof(char_n));
+
+        // initialize variables grabbed in loop
+        char character;
+        uint32_t code_size;
+        std::string code;
+        for(int i = 0; i < char_n; ++i){
+            // first grab the char
+            file_in.read(&character, sizeof(character));
+
+            // then grab the size of the code since it is dynamic
+            file_in.read(reinterpret_cast<char*>(&code_size), sizeof(code_size));
+
+            // resize string so it can store code
+            code.resize(code_size);
+            // lastly grab the code
+            // notice data is used, this is a pointer to the string's buffer
+            file_in.read(code.data(), code_size);
+
+            // add to codes unordered map
+            codes[character] = code;
+        }
 
         // read the first 8 bytes which is 2 ints storing how many pairs and last bits
+        uint32_t num_pairs;
+        uint32_t last_bits;
         file_in.read(reinterpret_cast<char*>(&num_pairs), sizeof(num_pairs));
         file_in.read(reinterpret_cast<char*>(&last_bits), sizeof(last_bits));
 
@@ -120,13 +161,16 @@ std::string File::decompress_file(std::string filename){
 
             num_pairs--;
         }
+
+        // decode text to return
+        decoded_text = HuffmanCode::decode_text(file_content,codes);
     }catch(const std::runtime_error& e){
         std::cerr << "Runtime error: " << e.what() << std::endl;
     }catch(const std::exception& e){
         std::cerr << "Exception error: " << e.what() << std::endl;
     }
 
-    return file_content;
+    return decoded_text;
 }
 
 void File::output_decoded_content(std::string filename, std::string file_content){
