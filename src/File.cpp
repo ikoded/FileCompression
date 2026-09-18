@@ -28,10 +28,6 @@ void File::compress_file(std::string filename, std::string encoded_text, std::un
     try{
         std::ofstream compressed_bin(file_out, std::ios::out | std::ios::binary);
 
-        // grab number of pairs to go through and remainder
-        uint32_t num_pairs = encoded_text.length() / 8;
-        uint32_t last_bits = encoded_text.length() % 8;
-
         // write the headers at the beginning for the decoder to know
         // number of chars there will be
         uint32_t num_chars = codes.size();
@@ -48,7 +44,9 @@ void File::compress_file(std::string filename, std::string encoded_text, std::un
             compressed_bin.write(code.c_str(), code_size);
         }
 
-        // num of pairs to parse into & last bits left
+        // grab number of pairs to go through and remainder of bits, then write to header
+        uint32_t num_pairs = encoded_text.length() / 8;
+        uint32_t last_bits = encoded_text.length() % 8;
         compressed_bin.write(reinterpret_cast<char*>(&num_pairs), sizeof(num_pairs));
         compressed_bin.write(reinterpret_cast<char*>(&last_bits), sizeof(last_bits));
 
@@ -91,7 +89,7 @@ void File::compress_file(std::string filename, std::string encoded_text, std::un
 
 /*
 
-Decompresses file using algorithm set in compression and returns as a String
+Decompresses file using algorithm set in compression, decode it and return a String
 
 */
 std::string File::decompress_file(std::string filename){
@@ -100,16 +98,13 @@ std::string File::decompress_file(std::string filename){
     std::string decoded_text = "";
     try{
         std::ifstream file_in(file_out_name, std::ios::binary);
-        std::unordered_map<char, std::string> codes;
-
-        uint32_t num_pairs;
-        uint32_t last_bits;
-
         // grab code headers to decipher at end
+        std::unordered_map<char, std::string> codes;
         // number of chars
         uint32_t char_n;
         file_in.read(reinterpret_cast<char*>(&char_n), sizeof(char_n));
 
+        // initialize variables grabbed in loop
         char character;
         uint32_t code_size;
         std::string code;
@@ -120,8 +115,10 @@ std::string File::decompress_file(std::string filename){
             // then grab the size of the code since it is dynamic
             file_in.read(reinterpret_cast<char*>(&code_size), sizeof(code_size));
 
+            // resize string so it can store code
             code.resize(code_size);
             // lastly grab the code
+            // notice data is used, this is a pointer to the string's buffer
             file_in.read(code.data(), code_size);
 
             // add to codes unordered map
@@ -129,6 +126,8 @@ std::string File::decompress_file(std::string filename){
         }
 
         // read the first 8 bytes which is 2 ints storing how many pairs and last bits
+        uint32_t num_pairs;
+        uint32_t last_bits;
         file_in.read(reinterpret_cast<char*>(&num_pairs), sizeof(num_pairs));
         file_in.read(reinterpret_cast<char*>(&last_bits), sizeof(last_bits));
 
@@ -163,6 +162,7 @@ std::string File::decompress_file(std::string filename){
             num_pairs--;
         }
 
+        // decode text to return
         decoded_text = HuffmanCode::decode_text(file_content,codes);
     }catch(const std::runtime_error& e){
         std::cerr << "Runtime error: " << e.what() << std::endl;

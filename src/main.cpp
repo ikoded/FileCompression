@@ -74,13 +74,12 @@ int main(int argc, char* argv[]){
     file.compress_file(filename, encoded_text, codes);
 
     // decompress the file to show it stayed accurate
+    // also decodes since decompressed content is not needed
     std::string decompressed_content = file.decompress_file(filename);
-
     if(decompressed_content == ""){
         std::cerr << "Error decompressing file." << std::endl;
         return 1;
     }
-
     std::cout << "Decoded text from bin:\n" <<  decompressed_content << "\n\n" << std::endl;
 
     // send decompressed content to output file

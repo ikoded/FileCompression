@@ -34,7 +34,12 @@ a binary header needs to tell the decompression program how to decode it.
 Use count-based:
 
 ```
+4 Bytes (Number of 8 bit pairs to go through) +
+4 bytes (Number of bits leftover not in perfect 8 bit pair) +
 4 Bytes (Size of unique characters) + 
-5 Bytes (char + frequency of char int(4 bytes)) + 
+(LOOP)
+1 Byte (char) +
+N Byte (codes can be 1-N size, N being max code char* size) + 
+(END LOOP)
 Rest of Bytes (Compressed bits code)
 ```
