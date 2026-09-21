@@ -17,3 +17,6 @@ Testing should include short documents and long documents. It should include doc
 The most important test is exact equality. After compression and decompression, the resulting text should equal the original text character for character. The output should contain the same number of lines, the same spaces, the same punctuation, and the same final newline. If even one bit is lost or read in the wrong order, the decoded output may differ. This long test file provides enough data to make those errors easier to notice.
 
 The end of the test file repeats the main idea one more time. Huffman coding assigns shorter representations to frequent characters and longer representations to rare characters. The header describes the code table, the packed data stores the encoded message, and the decoder combines both pieces to recover the original. Huffman coding assigns shorter representations to frequent characters and longer representations to rare characters. The header describes the code table, the packed data stores the encoded message, and the decoder combines both pieces to recover the original.
+
+
+This is an empty space to show it still translates

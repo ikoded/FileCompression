@@ -1,5 +1,17 @@
 #include "../include/File.h"
 
+std::vector<std::string> File::get_files(std::string dir){
+    std::vector<std::string> files;
+    // auto& means a direct reference with no copy, simply more efficent even if not changing ut
+    for(const auto& file : std::filesystem::directory_iterator(dir)){
+        if(file.is_regular_file()){
+            files.push_back(file.path().stem().string());
+        }
+    }
+
+    return files;
+}
+
 std::string File::read_file(std::string filename){
     std::string file_content = "";
     try{
@@ -92,91 +104,98 @@ void File::compress_file(std::string filename, std::string encoded_text, std::un
 Decompresses file using algorithm set in compression, decode it and return a String
 
 */
-std::string File::decompress_file(std::string filename){
-    std::string file_out_name = "data_out/" + filename + ".bin";
-    std::string file_content = "";
-    std::string decoded_text = "";
-    try{
-        std::ifstream file_in(file_out_name, std::ios::binary);
-        // grab code headers to decipher at end
-        std::unordered_map<char, std::string> codes;
-        // number of chars
-        uint32_t char_n;
-        file_in.read(reinterpret_cast<char*>(&char_n), sizeof(char_n));
+void File::decompress_files(){
+    std::vector<std::string> files = get_files("data_out");
+    while(files.size() > 0) {
+        std::string filename = files.back();
+        files.pop_back();
+        std::cout << "Decompressing file: " << filename << std::endl;
 
-        // initialize variables grabbed in loop
-        char character;
-        uint32_t code_size;
-        std::string code;
-        for(int i = 0; i < char_n; ++i){
-            // first grab the char
-            file_in.read(&character, sizeof(character));
+        std::string file_out_name = "data_out/" + filename + ".bin";
+        std::string file_content = "";
+        std::string decoded_text = "";
+        try{
+            std::ifstream file_in(file_out_name, std::ios::binary);
+            // grab code headers to decipher at end
+            std::unordered_map<char, std::string> codes;
+            // number of chars
+            uint32_t char_n;
+            file_in.read(reinterpret_cast<char*>(&char_n), sizeof(char_n));
 
-            // then grab the size of the code since it is dynamic
-            file_in.read(reinterpret_cast<char*>(&code_size), sizeof(code_size));
+            // initialize variables grabbed in loop
+            char character;
+            uint32_t code_size;
+            std::string code;
+            for(int i = 0; i < char_n; ++i){
+                // first grab the char
+                file_in.read(&character, sizeof(character));
 
-            // resize string so it can store code
-            code.resize(code_size);
-            // lastly grab the code
-            // notice data is used, this is a pointer to the string's buffer
-            file_in.read(code.data(), code_size);
+                // then grab the size of the code since it is dynamic
+                file_in.read(reinterpret_cast<char*>(&code_size), sizeof(code_size));
 
-            // add to codes unordered map
-            codes[character] = code;
-        }
+                // resize string so it can store code
+                code.resize(code_size);
+                // lastly grab the code
+                // notice data is used, this is a pointer to the string's buffer
+                file_in.read(code.data(), code_size);
 
-        // read the first 8 bytes which is 2 ints storing how many pairs and last bits
-        uint32_t num_pairs;
-        uint32_t last_bits;
-        file_in.read(reinterpret_cast<char*>(&num_pairs), sizeof(num_pairs));
-        file_in.read(reinterpret_cast<char*>(&last_bits), sizeof(last_bits));
-
-        while(num_pairs>0){
-            // initialize variables
-            uint8_t packed_byte;
-            int bit = 0;
-
-            // read char* into uint8_t packed_byte
-            file_in.read(reinterpret_cast<char*>(&packed_byte), sizeof(packed_byte));
-
-            // go from left to right like the compression stored it
-            for(int i = 7; i >= 0; --i){
-                // grab a mask of 1 to & to get bit
-                // so for 7, that will make a mask of 10000000
-                uint8_t mask = 1 << i;
-                // store as char to easily translate and write in string
-                char bit = (packed_byte & mask) ? '1' : '0';
-
-                // if last pair check remaining bits to go through
-                if(num_pairs == 1 && last_bits > 0){
-                    // if i > last bits - 1 (0 based index) skip, since they are padded zeroes
-                    if(i>last_bits-1){
-                        continue;
-                    }
-                }
-                // convert char to string and write to file_content
-                std::string temp(1,bit);
-                file_content.append(temp);
+                // add to codes unordered map
+                codes[character] = code;
             }
 
-            num_pairs--;
+            // read the first 8 bytes which is 2 ints storing how many pairs and last bits
+            uint32_t num_pairs;
+            uint32_t last_bits;
+            file_in.read(reinterpret_cast<char*>(&num_pairs), sizeof(num_pairs));
+            file_in.read(reinterpret_cast<char*>(&last_bits), sizeof(last_bits));
+
+            while(num_pairs>0){
+                // initialize variables
+                uint8_t packed_byte;
+                int bit = 0;
+
+                // read char* into uint8_t packed_byte
+                file_in.read(reinterpret_cast<char*>(&packed_byte), sizeof(packed_byte));
+
+                // go from left to right like the compression stored it
+                for(int i = 7; i >= 0; --i){
+                    // grab a mask of 1 to & to get bit
+                    // so for 7, that will make a mask of 10000000
+                    uint8_t mask = 1 << i;
+                    // store as char to easily translate and write in string
+                    char bit = (packed_byte & mask) ? '1' : '0';
+
+                    // if last pair check remaining bits to go through
+                    if(num_pairs == 1 && last_bits > 0){
+                        // if i > last bits - 1 (0 based index) skip, since they are padded zeroes
+                        if(i>last_bits-1){
+                            continue;
+                        }
+                    }
+                    // convert char to string and write to file_content
+                    std::string temp(1,bit);
+                    file_content.append(temp);
+                }
+
+                num_pairs--;
+            }
+
+            // decode text to return
+            decoded_text = HuffmanCode::decode_text(file_content,codes);
+            output_decoded_content(filename, decoded_text);
+        }catch(const std::runtime_error& e){
+            std::cerr << "Runtime error: " << e.what() << std::endl;
+        }catch(const std::exception& e){
+            std::cerr << "Exception error: " << e.what() << std::endl;
         }
 
-        // decode text to return
-        decoded_text = HuffmanCode::decode_text(file_content,codes);
-    }catch(const std::runtime_error& e){
-        std::cerr << "Runtime error: " << e.what() << std::endl;
-    }catch(const std::exception& e){
-        std::cerr << "Exception error: " << e.what() << std::endl;
     }
-
-    return decoded_text;
 }
 
 void File::output_decoded_content(std::string filename, std::string file_content){
     try{
         // file to write to
-        std::ofstream file("data_in/" + filename + "out.txt");
+        std::ofstream file("data_in/" + filename + ".txt");
 
         file << file_content;
 
@@ -200,6 +219,6 @@ void File::compare_sizes(std::string filename){
     float file_out_size =  std::filesystem::file_size(file_out);
     float compression_percent = 100 - ((file_out_size / file_in_size) * 100);
 
-    std::cout << "Original size: " << file_in_size << " bytes" << std::endl;
-    std::cout << "Compressed size: " << file_out_size << " bytes (" << compression_percent << "%)" << std::endl;
+    std::cout << filename << " original size: " << file_in_size << " bytes" << std::endl;
+    std::cout << filename << " compressed size: " << file_out_size << " bytes (" << compression_percent << "%)\n\n" << std::endl;
 }

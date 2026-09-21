@@ -2,84 +2,52 @@
 #include "../include/Node.h"
 #include "../include/HuffmanCode.h"
 
-#include <unordered_map>
-#include <queue>
-#include <vector>
-
-int main(int argc, char* argv[]){
-    std::unordered_map<char,int> frequencies;
-    File file;
-
+int parse_args(int argc, char* argv[]){
     // error check command line commands
     if(argc != 2){
-        std::cerr << "Incorrect arguments, please review README. Arguments provided: " << std::endl;
+        std::cerr << "Incorrect amount of arguments, please review README. Arguments provided: " << std::endl;
         for(int i = 0; i < argc; ++i){
             std::cerr << "- " << argv[i] << std::endl;
         }
-        return 1;
+        return 0;
     }
 
-    std::string filename = argv[1];
-    std::string file_content = file.read_file(filename);
-    if(file_content == ""){
-        std::cerr << "Please make sure file exists or is in the data_in folder." << std::endl;
-        return 1;
+    std::string argument_choice = argv[1];
+
+    if(argument_choice == "--compress"){
+        return 1; // compress option
+    }else if(argument_choice == "--decompress"){
+        return 2; // decompress option
+    }else{
+        // invalid choice for argument
+        std::cerr << "Only valid argument options are `--compress` and `--decompress`." << std::endl;
+        return 0;
     }
+}
 
-    // grab the frequencies of each character
-    for(char c : file_content){
-        frequencies[c]++;
+int main(int argc, char* argv[]){
+    int choice = parse_args(argc,argv);
+    switch(choice){
+        case 0: {
+            // this means args passed was wrong in some way, error message in parse_args
+            return 1;
+            break;
+        }
+        case 1: {
+            // this means compress files in data_in
+            HuffmanCode::start_huffman_encoding();
+            break;
+        }
+        case 2: {
+            // this means decompress files in data_out
+            File file;
+            file.decompress_files();
+            break;
+        }
+        default: {
+            break;
+        }
     }
-
-    // create a min heap of lowest to greatest
-    std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>, Node::CompareNode> minheap;
-    for(const auto& [ch,freq] : frequencies){
-        minheap.push(std::make_shared<Node>(ch,freq));
-    }
-
-    // go through minheap, creating dummy parent nodes that have \0 as the character and frequency set as left + right frequencies
-    while(minheap.size() > 1){
-        auto left_node = minheap.top();
-        minheap.pop();
-
-        auto right_node = minheap.top();
-        minheap.pop();
-
-        auto parent_node = std::make_shared<Node>('\0',(left_node->get_freq() + right_node->get_freq()));
-        // set left and right leaf nodes for parent node
-        parent_node->set_left_or_right(0,left_node);
-        parent_node->set_left_or_right(1,right_node);
-
-        minheap.push(parent_node);
-    }
-
-    // grab the root and start the code generation
-    auto root = minheap.top();
-
-    // generate huffman codes
-    std::unordered_map<char,std::string> codes;
-    HuffmanCode::generate_huffman_codes(root, "", codes);
-
-    std::cout << "Original content:\n" << file_content << "\n\n" << std::endl;
-    std::string encoded_text = HuffmanCode::encode_text(file_content, codes);
-
-    // compress encoded content and output file
-    file.compress_file(filename, encoded_text, codes);
-
-    // decompress the file to show it stayed accurate
-    // also decodes since decompressed content is not needed
-    std::string decompressed_content = file.decompress_file(filename);
-    if(decompressed_content == ""){
-        std::cerr << "Error decompressing file." << std::endl;
-        return 1;
-    }
-    std::cout << "Decoded text from bin:\n" <<  decompressed_content << "\n\n" << std::endl;
-
-    // send decompressed content to output file
-    file.output_decoded_content(filename, decompressed_content);
-
-    // just nice to compare sizes of a compressed file before/after
-    file.compare_sizes(filename);
 
     return 0;
 }
